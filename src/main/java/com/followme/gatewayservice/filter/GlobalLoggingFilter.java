@@ -28,7 +28,9 @@ public class GlobalLoggingFilter implements GlobalFilter, Ordered {
                   Long start = exchange.getAttribute("startTime");
                   if (start != null) {
                     long executionTime = System.currentTimeMillis() - start;
-                    log.info("[Global Post Filter] Response completed -> Execution time: {}ms", executionTime);
+                    log.info(
+                        "[Global Post Filter] Response completed -> Execution time: {}ms",
+                        executionTime);
                   }
                 }));
   }

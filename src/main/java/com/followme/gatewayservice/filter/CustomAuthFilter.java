@@ -33,7 +33,6 @@ public class CustomAuthFilter extends AbstractGatewayFilterFactory<CustomAuthFil
         return exchange.getResponse().setComplete();
       }
 
-
       log.info("[CustomAuth Filter] Authentication successful, proceeding to next filter.");
       return chain.filter(exchange);
     };
