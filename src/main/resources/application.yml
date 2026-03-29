@@ -3,21 +3,23 @@ server:
 
 spring:
   application:
-    name: gateway-service
+    name: gateway-server
   cloud:
     gateway:
       server:
         webflux:
+          # 전역 필터 설정
           default-filters:
             - AddRequestHeader=X-Gateway-Request, true
           
+          # 개별 서비스 라우팅 전략
           routes:
-            - id: user-service
-              uri: lb://USER-SERVICE
+            - id: user-server
+              uri: lb://USER-SERVER
               predicates:
-                - Path=/users/**
+                - Path=/api/v1/users/**
               filters:
-                - CustomAuthFilter
+                - name: CustomAuthFilter
 
 eureka:
   client:
