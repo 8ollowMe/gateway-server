@@ -1,4 +1,4 @@
-package com.followme.gatewayservice.filter;
+package com.followme.gatewayserver.filter;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
