@@ -6,29 +6,41 @@ import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFac
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+
 @Slf4j
 @Component
 public class CustomAuthFilter extends AbstractGatewayFilterFactory<CustomAuthFilter.Config> {
+
+  // 인증을 면제할 공개(Public) API 경로 목록 정의 (화이트리스트)
+  private static final List<String> EXCLUDE_PATHS = List.of(
+      "/api/v1/users/register"
+  );
 
   public CustomAuthFilter() {
     super(Config.class);
   }
 
   public static class Config {
-    // YML에서 전달받을 설정값이 있다면 여기에 추가
   }
 
   @Override
   public GatewayFilter apply(Config config) {
     return (exchange, chain) -> {
-      log.info("[CustomAuth Filter] KeyCloak authentication filter started.");
 
-      // 요청 헤더에서 Authorization 추출
+      String path = exchange.getRequest().getURI().getPath();
+      log.info("[CustomAuth Filter] KeyCloak authentication filter started. Path: {}", path);
+
+      boolean isExcluded = EXCLUDE_PATHS.stream().anyMatch(path::startsWith);
+      if (isExcluded) {
+        log.info("[CustomAuth Filter] Excluded path detected: {}. Proceeding without authentication.", path);
+        return chain.filter(exchange);
+      }
+
       String authorizationHeader = exchange.getRequest().getHeaders().getFirst("Authorization");
 
-      // 임시 로직: 헤더가 없거나 Bearer로 시작하지 않으면 거부 (401 Unauthorized)
       if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
-        log.warn("[CustomAuth Filter] Authentication failed: Invalid token.");
+        log.warn("[CustomAuth Filter] Authentication failed: Invalid token for path {}", path);
         exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
         return exchange.getResponse().setComplete();
       }
