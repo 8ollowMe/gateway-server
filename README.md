@@ -1,7 +1,7 @@
 # 🏢 FollowMe Gateway Server (API Gateway)
 
 ## 1. 프로젝트 개요 (Executive Summary)
-`gateway-server`는 FollowMe 마이크로서비스 아키텍처(MSA)의 **전사적 단일 진입점(Single Entry Point)** 역할을 수행하는 핵심 인프라입니다. 클라이언트의 모든 요청은 본 게이트웨이를 거쳐 내부 서비스로 라우팅되며, 이 과정에서 중앙 집중식 보안 인증과 시스템 성능 감사를 수행합니다.
+`gateway-server`는 FollowMe 마이크로서비스 아키텍처(MSA)의 Single Entry Point 역할을 수행하는 핵심 인프라입니다. 클라이언트의 모든 요청은 본 게이트웨이를 거쳐 내부 서비스로 라우팅되며, 이 과정에서 중앙 집중식 보안 인증과 시스템 성능 감사를 수행합니다.
 
 ## 2. 핵심 비즈니스 가치 (Core Capabilities)
 
