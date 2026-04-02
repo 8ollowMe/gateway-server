@@ -5,7 +5,6 @@ spring:
   application:
     name: gateway-server
 
-  # 시니어의 보안 검증 (Keycloak) - 필요시 주석 처리 후 진행 가능
   security:
     oauth2:
       resourceserver:
@@ -40,7 +39,42 @@ spring:
         - id: hub-server
           uri: lb://hub-server
           predicates:
-            - Path=/api/v1/hubs/**
+            - Path=/api/v1/hubs/**, /api/v1/hub-routes/**, /api/v1/stocks/**, /api/v1/stock-histories/**
+          filters:
+            - name: CustomAuthFilter
+
+        - id: vendor-server
+          uri: lb://vendor-server
+          predicates:
+            - Path=/api/v1/vendors/**, /api/v1/products/**
+          filters:
+            - name: CustomAuthFilter
+
+        - id: order-server
+          uri: lb://order-server
+          predicates:
+            - Path=/api/v1/orders/**
+          filters:
+            - name: CustomAuthFilter
+
+        - id: delivery-server
+          uri: lb://delivery-server
+          predicates:
+            - Path=/api/v1/deliveries/**, /api/v1/shipments/**
+          filters:
+            - name: CustomAuthFilter
+
+        - id: message-server
+          uri: lb://message-server
+          predicates:
+            - Path=/api/v1/slack-messages/**, /api/v1/notifications/**
+          filters:
+            - name: CustomAuthFilter
+
+        - id: ai-server
+          uri: lb://ai-server
+          predicates:
+            - Path=/api/v1/ai/**
           filters:
             - name: CustomAuthFilter
 

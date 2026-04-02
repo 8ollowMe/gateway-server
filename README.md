@@ -1,57 +1,82 @@
-# 🏢 FollowMe Gateway Server (API Gateway)
+# 🚀 API Gateway Server
 
-## 1. 프로젝트 개요 (Executive Summary)
-`gateway-server`는 FollowMe 마이크로서비스 아키텍처(MSA)의 **전사적 단일 진입점(Single Entry Point)** 역할을 수행하는 핵심 인프라입니다. 클라이언트의 모든 요청은 본 게이트웨이를 거쳐 내부 서비스로 라우팅되며, 이 과정에서 중앙 집중식 보안 인증과 시스템 성능 감사를 수행합니다.
+B2B 물류 배송 시스템(SpartaHub)의 단일 진입점(Single Point of Contact)을 담당하는 API Gateway입니다. 외부 트래픽을 각 마이크로서비스로 라우팅하고, 중앙 집중식 인증 및 인가를 수행합니다.
 
-## 2. 핵심 비즈니스 가치 (Core Capabilities)
+## ✨ 핵심 기능
 
-* **보안 통제소 (Zero-Trust Security):** `CustomAuthFilter`를 통해 Keycloak에서 발급한 JWT(JSON Web Token)의 유효성을 최전선에서 검증하여, 인가되지 않은 외부 접근을 원천 차단합니다.
-* **동적 라우팅 (Service Discovery):** Netflix Eureka와 연동하여 백엔드 서비스(예: `USER-SERVER`)의 위치(IP/Port)를 동적으로 파악하고 트래픽을 안전하게 분산(Load Balancing)합니다.
-* **운영 가시성 확보 (Global Audit Logging):** `GlobalLoggingFilter`를 통해 모든 API 요청의 진입점과 처리 소요 시간을 밀리초(ms) 단위로 추적하여 시스템 병목 현상을 모니터링합니다.
-
----
-
-## 3. 시스템 아키텍처 (Architecture Flow)
-
-요청(Request)은 다음과 같은 보안 및 라우팅 파이프라인을 거칩니다.
-
-1. **Client** ➡️ `http://localhost:8000/api/v1/...` (Gateway API 호출)
-2. **Global Pre Filter** ➡️ 요청 시간 기록 및 로깅
-3. **Custom Auth Filter** ➡️ `Authorization: Bearer <Token>` 검증 (실패 시 401 차단)
-4. **Eureka Registry** ➡️ 목적지 마이크로서비스 주소 탐색 (예: `lb://USER-SERVER`)
-5. **Microservice** ➡️ 실제 비즈니스 로직 처리 (`user-server`)
-6. **Global Post Filter** ➡️ 최종 응답 속도 산출 및 로깅
+- **동적 라우팅:** Eureka Service Discovery를 통해 대상 서버로 트래픽을 로드밸런싱합니다.
+- **실시간 권한 검증 (Stateful Auth):** 외부 요청의 위조된 헤더를 초기화하고, JWT 토큰을 바탕으로 User Server와 내부 통신(`WebClient`)하여 유저의 실시간 상태(`APPROVED`)를 검증합니다.
+- **글로벌 CORS 처리:** 프론트엔드 연동을 위한 전역 CORS 설정을 관리하여 하위 서비스의 부담을 줄입니다.
 
 ---
 
-## 4. 인프라 기동 순서 (Standard Operating Procedure)
+## 🗺️ 라우팅 규격 (Architecture)
 
-마이크로서비스 간의 의존성으로 인해 **반드시 아래의 순서대로 서버를 기동**해야 합니다.
+외부에서 들어오는 모든 요청은 아래의 경로 규칙에 따라 각 마이크로서비스로 전달됩니다.
 
-1. **Eureka Server** (`8761`): 주소록 역할 (가장 먼저 기동)
-2. **Keycloak Server** (`9090`): 인증 및 토큰 발급 (SSO)
-3. **Microservices** (예: `user-server` `8080`): 실제 업무 처리 서비스
-4. **Gateway Server** (`8000`): 최종 라우팅 및 보안 관제
+| 마이크로서비스 | 라우팅 경로 (Predicates) | 비고 |
+|---|---|---|
+| **User Server** | `/api/v1/users/**` | 회원가입(`/register`)은 인증 필터 패스 |
+| **Hub Server** | `/api/v1/hubs/**`, `/api/v1/hub-routes/**`, `/api/v1/stocks/**`, `/api/v1/stock-histories/**` | |
+| **Vendor Server** | `/api/v1/vendors/**`, `/api/v1/products/**` | |
+| **Order Server** | `/api/v1/orders/**` | |
+| **Delivery Server** | `/api/v1/deliveries/**`, `/api/v1/shipments/**` | |
+| **Message Server**| `/api/v1/slack-messages/**`, `/api/v1/notifications/**` | |
+| **AI Server** | `/api/v1/ai/**` | |
 
-> **인프라 검증:** 브라우저에서 `http://localhost:8761` (Eureka Dashboard)에 접속하여 `GATEWAY-SERVER`와 타겟 서비스들이 **UP** 상태인지 반드시 확인하십시오.
+> ⚠️ **주의:** `/internal/**` 로 시작하는 내부 통신용 API는 라우팅 규칙에서 제외되어 있으므로 외부(Postman, Frontend)에서 직접 호출할 수 없습니다.
 
 ---
 
-## 5. API 테스트 지침 (QA Testing Protocol)
+## 🔑 내부 인증 헤더 (X-Headers) 사용 가이드
 
-게이트웨이를 통한 통합 테스트 시, Postman 또는 cURL을 사용하여 다음 규격을 준수해야 합니다.
+**API Gateway를 통과한 모든 요청에는 유저의 최신 정보가 HTTP Header에 담겨서 전달됩니다.**
+따라서 뒷단(Downstream)의 마이크로서비스 개발자들은 복잡한 JWT 검증 로직을 구현할 필요 없이, Request Header에서 값을 꺼내 쓰기만 하면 됩니다.
 
-### ❌ 잘못된 테스트 방식 (Direct Bypass)
-* **URL:** `http://localhost:8080/api/v1/users/...`
-* **사유:** 게이트웨이(8000)를 우회하여 내부망(8080)으로 직접 찔러넣는 방식이므로 보안 필터와 로그가 작동하지 않습니다.
+### 📦 전달되는 헤더 목록
 
-### ⭕ 올바른 테스트 방식 (Via Gateway)
-* **URL:** `http://localhost:8000/api/v1/users/...`
-* **Headers 필수 포함:**
-  * `Key`: `Authorization`
-  * `Value`: `Bearer {Keycloak에서_새로_발급받은_Access_Token}`
+| 헤더 이름 (Key) | 설명 (Value) | 예시 |
+|---|---|---|
+| `X-User-Id` | 유저의 고유 식별자 (UUID) | `123e4567-e89b-12d3-a456-426614174000` |
+| `X-Role` | 유저의 권한 등급 | `MASTER`, `HUB_MANAGER`, `VENDOR` 등 |
+| `X-Username` | 로그인 아이디 | `test_user_01` |
+| `X-User-Name` | 유저의 실제 이름 (URL 인코딩됨) | `%ED%99%8D%EA%B8%B8%EB%8F%99` (홍길동) |
+| `X-User-Email` | 유저 이메일 | `user@example.com` |
 
-```bash
-# cURL 테스트 예시
-curl -X GET "http://localhost:8000/api/v1/users/profile" \
-     -H "Authorization: Bearer eyJhbGciOi..."
+### 💻 각 마이크로서비스에서 X-Header를 사용하는 방법 (Spring Boot 예시)
+
+해당 마이크로서비스의 Controller에서 `@RequestHeader` 어노테이션을 사용하여 필요한 정보를 바로 꺼내어 비즈니스 로직에 활용하세요.
+
+```java
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RestController;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+
+@RestController
+public class OrderController {
+
+    @PostMapping("/api/v1/orders")
+    public ResponseEntity<String> createOrder(
+            @RequestHeader("X-User-Id") String userId,
+            @RequestHeader("X-Role") String role,
+            @RequestHeader(value = "X-User-Name", required = false) String encodedName
+    ) {
+        // 1. 권한 체크 예시 (Service 계층으로 넘겨서 처리해도 무방)
+        if (!role.equals("MASTER") && !role.equals("HUB_MANAGER")) {
+            return ResponseEntity.status(403).body("주문 생성 권한이 없습니다.");
+        }
+
+        // 2. 인코딩된 이름 디코딩 예시 (필요한 경우)
+        String realName = "";
+        if (encodedName != null) {
+            realName = URLDecoder.decode(encodedName, StandardCharsets.UTF_8);
+        }
+
+        // 3. 추출한 userId를 바탕으로 주문 로직 실행
+        // orderService.createOrder(userId, requestDto);
+
+        return ResponseEntity.ok(realName + "님의 주문이 접수되었습니다. (ID: " + userId + ")");
+    }
+}
