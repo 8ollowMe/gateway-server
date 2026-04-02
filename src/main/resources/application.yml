@@ -4,22 +4,45 @@ server:
 spring:
   application:
     name: gateway-server
+
+  # 시니어의 보안 검증 (Keycloak) - 필요시 주석 처리 후 진행 가능
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: "http://localhost:9090/realms/user/protocol/openid-connect/certs"
+          issuer-uri: "http://localhost:9090/realms/user"
+
   cloud:
     gateway:
-      server:
-        webflux:
-          # 전역 필터 설정
-          default-filters:
-            - AddRequestHeader=X-Gateway-Request, true
-          
-          # 개별 서비스 라우팅 전략
-          routes:
-            - id: user-server
-              uri: lb://USER-SERVER
-              predicates:
-                - Path=/api/v1/users/**
-              filters:
-                - name: CustomAuthFilter
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOriginPatterns: "*"
+            allowedMethods: [GET, POST, PUT, DELETE, OPTIONS, PATCH]
+            allowedHeaders: "*"
+            allowCredentials: true
+            maxAge: 3600
+
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+
+      routes:
+        - id: user-server
+          uri: lb://user-server
+          predicates:
+            - Path=/api/v1/users/**
+          filters:
+            - name: CustomAuthFilter
+
+        - id: hub-server
+          uri: lb://hub-server
+          predicates:
+            - Path=/api/v1/hubs/**
+          filters:
+            - name: CustomAuthFilter
 
 eureka:
   client:
