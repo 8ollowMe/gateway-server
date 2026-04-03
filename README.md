@@ -38,7 +38,7 @@ B2B 물류 배송 시스템(SpartaHub)의 단일 진입점(Single Point of Conta
 | 헤더 이름 (Key) | 설명 (Value) | 예시 |
 |---|---|---|
 | `X-User-Id` | 유저의 고유 식별자 (UUID) | `123e4567-e89b-12d3-a456-426614174000` |
-| `X-Role` | 유저의 권한 등급 | `MASTER`, `HUB_MANAGER`, `VENDOR` 등 |
+| `X-Role` | 유저의 권한 등급 | `MASTER`, `HUB`, `VENDOR` 등 |
 | `X-Username` | 로그인 아이디 | `test_user_01` |
 | `X-User-Name` | 유저의 실제 이름 (URL 인코딩됨) | `%ED%99%8D%EA%B8%B8%EB%8F%99` (홍길동) |
 | `X-User-Email` | 유저 이메일 | `user@example.com` |
@@ -49,7 +49,7 @@ B2B 물류 배송 시스템(SpartaHub)의 단일 진입점(Single Point of Conta
 
 ```java
 public enum UserRole {
-    MASTER, HUB_MANAGER, HUB_DELIVERY, STORE_MANAGER, STORE_DELIVERY, VENDOR, USER
+    MASTER, HUB, VENDOR, DELIVERY
 }
 
 Controller에서는 @RequestHeader로 값을 받아 Enum으로 변환하여 안전하게 사용합니다.
@@ -74,7 +74,7 @@ public class OrderController {
         UserRole role = UserRole.valueOf(roleString);
 
         // 2. Enum을 활용한 안전한 권한 체크 (Service 계층으로 넘겨서 처리하는 것을 권장)
-        if (role != UserRole.MASTER && role != UserRole.HUB_MANAGER) {
+        if (role != UserRole.MASTER && role != UserRole.HUB) {
             return ResponseEntity.status(403).body("주문 생성 권한이 없습니다.");
         }
 
