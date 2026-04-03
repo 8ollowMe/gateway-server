@@ -21,6 +21,34 @@ spring:
               filters:
                 - name: CustomAuthFilter
 
+            - id: delivery-server
+              uri: lb://DELIVERY-SERVER
+              predicates:
+                - Path=/api/v1/deliveries/**
+              filters:
+                - name: CustomAuthFilter
+
+            - id: hub-server
+              uri: lb://HUB-SERVER
+              predicates:
+                - Path=/api/v1/hubs/**
+              filters:
+                - name: CustomAuthFilter
+
+            - id: order-server
+              uri: lb://ORDER-SERVER
+              predicates:
+                - Path=/api/v1/orders/**
+              filters:
+                - name: CustomAuthFilter
+
+            - id: vendor-server
+              uri: lb://VENDOR-SERVER
+              predicates:
+                - Path=/api/v1/vendors/**
+              filters:
+                - name: CustomAuthFilter
+
 eureka:
   client:
     register-with-eureka: true
