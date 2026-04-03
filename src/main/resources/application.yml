@@ -4,22 +4,79 @@ server:
 spring:
   application:
     name: gateway-server
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: "http://localhost:9090/realms/user/protocol/openid-connect/certs"
+          issuer-uri: "http://localhost:9090/realms/user"
+
   cloud:
     gateway:
-      server:
-        webflux:
-          # 전역 필터 설정
-          default-filters:
-            - AddRequestHeader=X-Gateway-Request, true
-          
-          # 개별 서비스 라우팅 전략
-          routes:
-            - id: user-server
-              uri: lb://USER-SERVER
-              predicates:
-                - Path=/api/v1/users/**
-              filters:
-                - name: CustomAuthFilter
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOriginPatterns: "*"
+            allowedMethods: [GET, POST, PUT, DELETE, OPTIONS, PATCH]
+            allowedHeaders: "*"
+            allowCredentials: true
+            maxAge: 3600
+
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+
+      routes:
+        - id: user-server
+          uri: lb://user-server
+          predicates:
+            - Path=/api/v1/users/**
+          filters:
+            - name: CustomAuthFilter
+
+        - id: hub-server
+          uri: lb://hub-server
+          predicates:
+            - Path=/api/v1/hubs/**, /api/v1/hub-routes/**, /api/v1/stocks/**, /api/v1/stock-histories/**
+          filters:
+            - name: CustomAuthFilter
+
+        - id: vendor-server
+          uri: lb://vendor-server
+          predicates:
+            - Path=/api/v1/vendors/**, /api/v1/products/**
+          filters:
+            - name: CustomAuthFilter
+
+        - id: order-server
+          uri: lb://order-server
+          predicates:
+            - Path=/api/v1/orders/**
+          filters:
+            - name: CustomAuthFilter
+
+        - id: delivery-server
+          uri: lb://delivery-server
+          predicates:
+            - Path=/api/v1/deliveries/**, /api/v1/shipments/**
+          filters:
+            - name: CustomAuthFilter
+
+        - id: message-server
+          uri: lb://message-server
+          predicates:
+            - Path=/api/v1/slack-messages/**, /api/v1/notifications/**
+          filters:
+            - name: CustomAuthFilter
+
+        - id: ai-server
+          uri: lb://ai-server
+          predicates:
+            - Path=/api/v1/ai/**
+          filters:
+            - name: CustomAuthFilter
 
 eureka:
   client:
