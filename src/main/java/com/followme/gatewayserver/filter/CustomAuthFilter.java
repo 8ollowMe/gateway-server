@@ -22,8 +22,10 @@ import reactor.core.publisher.Mono;
 @Component
 public class CustomAuthFilter extends AbstractGatewayFilterFactory<CustomAuthFilter.Config> {
 
-  private static final List<String> EXCLUDE_PATHS =
-      List.of("/api/v1/users/register", "/v1/users/register", "/register");
+  private static final List<String> PUBLIC_PREFIXES = List.of(
+      "/api/v1/auth/",
+      "/api/v1/public/"
+  );
 
   private final ObjectMapper objectMapper;
   private final WebClient webClient;
@@ -42,7 +44,7 @@ public class CustomAuthFilter extends AbstractGatewayFilterFactory<CustomAuthFil
     return (exchange, chain) -> {
       String path = exchange.getRequest().getURI().getPath();
 
-      if (EXCLUDE_PATHS.stream().anyMatch(path::startsWith)) {
+      if (PUBLIC_PREFIXES.stream().anyMatch(path::startsWith)) {
         return chain.filter(exchange);
       }
 

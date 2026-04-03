@@ -45,10 +45,17 @@ B2B 물류 배송 시스템(SpartaHub)의 단일 진입점(Single Point of Conta
 
 ### 💻 각 마이크로서비스에서 X-Header를 사용하는 방법 (Spring Boot 예시)
 
-해당 마이크로서비스의 Controller에서 `@RequestHeader` 어노테이션을 사용하여 필요한 정보를 바로 꺼내어 비즈니스 로직에 활용하세요.
+먼저, 공통으로 사용할 권한 Enum 클래스를 생성합니다.
 
 ```java
-import org.springframework.web.bind.annotation.GetMapping;
+public enum UserRole {
+    MASTER, HUB_MANAGER, HUB_DELIVERY, STORE_MANAGER, STORE_DELIVERY, VENDOR, USER
+}
+
+Controller에서는 @RequestHeader로 값을 받아 Enum으로 변환하여 안전하게 사용합니다.
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 import java.net.URLDecoder;
@@ -60,21 +67,24 @@ public class OrderController {
     @PostMapping("/api/v1/orders")
     public ResponseEntity<String> createOrder(
             @RequestHeader("X-User-Id") String userId,
-            @RequestHeader("X-Role") String role,
+            @RequestHeader("X-Role") String roleString, // 👈 String으로 먼저 받습니다.
             @RequestHeader(value = "X-User-Name", required = false) String encodedName
     ) {
-        // 1. 권한 체크 예시 (Service 계층으로 넘겨서 처리해도 무방)
-        if (!role.equals("MASTER") && !role.equals("HUB_MANAGER")) {
+        // 1. String을 안전한 Enum 타입으로 변환
+        UserRole role = UserRole.valueOf(roleString);
+
+        // 2. Enum을 활용한 안전한 권한 체크 (Service 계층으로 넘겨서 처리하는 것을 권장)
+        if (role != UserRole.MASTER && role != UserRole.HUB_MANAGER) {
             return ResponseEntity.status(403).body("주문 생성 권한이 없습니다.");
         }
 
-        // 2. 인코딩된 이름 디코딩 예시 (필요한 경우)
+        // 3. 인코딩된 이름 디코딩 예시 (필요한 경우)
         String realName = "";
         if (encodedName != null) {
             realName = URLDecoder.decode(encodedName, StandardCharsets.UTF_8);
         }
 
-        // 3. 추출한 userId를 바탕으로 주문 로직 실행
+        // 4. 추출한 userId를 바탕으로 주문 로직 실행
         // orderService.createOrder(userId, requestDto);
 
         return ResponseEntity.ok(realName + "님의 주문이 접수되었습니다. (ID: " + userId + ")");
