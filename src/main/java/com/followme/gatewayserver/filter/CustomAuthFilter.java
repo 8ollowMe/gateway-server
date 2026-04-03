@@ -22,10 +22,7 @@ import reactor.core.publisher.Mono;
 @Component
 public class CustomAuthFilter extends AbstractGatewayFilterFactory<CustomAuthFilter.Config> {
 
-  private static final List<String> PUBLIC_PREFIXES = List.of(
-      "/api/v1/auth/",
-      "/api/v1/public/"
-  );
+  private static final List<String> PUBLIC_PREFIXES = List.of("/api/v1/auth/", "/api/v1/public/");
 
   private final ObjectMapper objectMapper;
   private final WebClient webClient;
