@@ -1,6 +1,7 @@
 package com.followme.gatewayserver.config;
 
 import java.util.Arrays;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -15,6 +16,9 @@ import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
 @Configuration
 @EnableWebFluxSecurity
 public class GatewaySecurityConfig {
+
+  @Value("${cors.allowed-origins:http://localhost:8080}")
+  private String allowedOrigins;
 
   @Bean
   public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
@@ -49,7 +53,7 @@ public class GatewaySecurityConfig {
   public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration configuration = new CorsConfiguration();
 
-    configuration.setAllowedOrigins(Arrays.asList("http://localhost:8080"));
+    configuration.setAllowedOrigins(Arrays.asList(allowedOrigins.split(",")));
     configuration.setAllowedMethods(
         Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
     configuration.setAllowedHeaders(Arrays.asList("*"));
